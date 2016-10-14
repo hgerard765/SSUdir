@@ -27,7 +27,7 @@ HowTo.prototype.eventHandlers.onLaunch = function (launchRequest, session, respo
     response.ask(speechText, repromptText);
 };
 
-HowTo.prototype.intentHandlers = x{
+HowTo.prototype.intentHandlers = {
     "RecipeIntent": function (intent, session, response) {
         var itemSlot = intent.slots.Bloop,
             itemName;
