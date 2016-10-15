@@ -1,9 +1,6 @@
 'use strict';
 
-//######## Whenever you first creat a module node.js throws a generic module.exports = {}; in the file  it makes a blank object 
-// so what node.js does is it looks inside the module.exports object and see's whatever is inside of it.  
 
-//common practice to name the variable the same as the module.  
 var AlexaSkill = require('./AlexaSkill'),
     recipes = require('./recipes'),
     http = require('http');
