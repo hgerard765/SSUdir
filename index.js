@@ -1,9 +1,5 @@
 'use strict';
 
-//######## Whenever you first creat a module node.js throws a generic module.exports = {}; in the file  it makes a blank object 
-// so what node.js does is it looks inside the module.exports object and see's whatever is inside of it.  
-
-//common practice to name the variable the same as the module.  
 var AlexaSkill = require('./AlexaSkill'),
     recipes = require('./recipes'),
     http = require('http');
@@ -20,36 +16,38 @@ HowTo.prototype = Object.create(AlexaSkill.prototype);
 HowTo.prototype.constructor = HowTo;
 
 HowTo.prototype.eventHandlers.onLaunch = function (launchRequest, session, response) {
-    var speechText = "Welcome to the Darwin Hall Faculty Directory. You can ask me a question like, what's George Le dean's office phone number? ... Now, what can I help you with.";
+    var speechText = " Hello welcome to quick deets please specify the SSU acadaemic proffesional who's; building, room, and phone number you would like me to recite.";
     // If the user either does not reply to the welcome message or says something that is not
     // understood, they will be prompted again with this text.
     var repromptText = "For instructions on what you can say, please say help me.";
     response.ask(speechText, repromptText);
 };
+// 
 
 HowTo.prototype.intentHandlers = {
     "RecipeIntent": function (intent, session, response) {
-        var itemSlot = intent.slots.Bloop,
-            itemName;
-        if (itemSlot && itemSlot.value){
-            itemName = itemSlot.value.toLowerCase();
-        }
-        var cardTitle = "Information for " + itemName,
-          recipe = recipes[itemName],
-            speechOutput,
-            repromptOutput;
-        if (recipe) {
-            speechOutput = {
-                speech: recipe,
-                type: AlexaSkill.speechOutputType.PLAIN_TEXT
+        console.log('we are in recipe intent')
+        var itemSlotLname = intent.slots.Lname,
+            Lname,
+            itemSlotFname = intent.slots.Fname,
+            Fname;
+        if (itemSlotLname && itemSlotLname.value && itemSlotFname && itemSlotFname.value){
+            Lname = itemSlotLname.value.toLowerCase();
+            Fname = itemSlotFname.value.toLowerCase();
             };
-            response.tellWithCard(speechOutput, cardTitle, recipe);
-        } else {
+
+
+
+        var options = recipes.optionsBuilder(Fname,Lname);
+
+        if (Fname && Lname) {
+            http.request(options, recipes.callbackBuilder(response)).end();
+        }  else {
             var speech;
-            if (itemName) {
-                speech = "I'm sorry, I currently do not know that answer. What else can I help you with?";
+            if (Fname) {
+                speech = "I'm sorry SSU moonlight does not have a "+Fname+" in it's directory";
             } else {
-                speech = "I'm sorry, I currently do not know that. What else can I help you with?";
+                speech = "What you have said makes no sense to my limited programming please say help or try asking again";
             }
             speechOutput = {
                 speech: speech,
@@ -59,19 +57,39 @@ HowTo.prototype.intentHandlers = {
                 speech: "Is there anything else I can help you with?",
                 type: AlexaSkill.speechOutputType.PLAIN_TEXT
             };
-            response.ask(speechOutput, repromptOutput);
-        }
+                response.ask(speechOutput, repromptOutput);
+          }          
     },
 
-    "AMAZON.StopIntent": function (intent, session, response) {
+    "emailIntent": function (intent, session, response) {
+
+
+                var itemEmail = intent.slots.email,
+                    email
+            
+                if (itemEmail && itemEmail.value){
+                    email = itemEmail.value.toLowerCase();
+                 };
+
+                if(email){
+                    var cardTitle = response[0].name + 'email address is ' + response[0].email
+                     emailSpeech = {
+                        speech: response[0].name + ' email address is ' + response[0].email
+                        type: AlexaSkill.speechOutputType.PLAIN_TEXT
+                    }
+                AlexaSkill.tellWithCard(emailSpeech, cardTitle, emailSpeech.speech) 
+                };
+    },
+
+     "AMAZON.StopIntent": function (intent, session, response) {
         var speechOutput = "Goodbye, and thanks for using the Darwin Hall Directory!";
         response.tell(speechOutput);
     },
-	
-	"AMAZON.PreviousIntent": function (intent, session, response) {
+    
+    "AMAZON.PreviousIntent": function (intent, session, response) {
         var speechOutput = "What can I assist you with?";
         response.tell(speechOutput);
-	},
+    },
 
     "AMAZON.CancelIntent": function (intent, session, response) {
         var speechOutput = "Goodbye";
@@ -90,6 +108,7 @@ HowTo.prototype.intentHandlers = {
             type: AlexaSkill.speechOutputType.PLAIN_TEXT
         };
         response.ask(speechOutput, repromptOutput);
+
     }
 };
 
@@ -98,27 +117,4 @@ exports.handler = function (event, context) {
     howTo.execute(event, context);
 };
 
-
-
- /*
-
-
-
-callback = function(response) {
-    var str = '';
-    var result = {};
-
-    response.on('data', function (chunk) {
-        str += chunk;
-    });
-
-    response.on('end', function() {
-        result = JSON.parse(str);
-        console.log(result[1].name)
-    });
-}
-
-http.request(options, callback).end();
-
-        */
 
