@@ -1,5 +1,4 @@
 'use strict';
-//#####anytime we create a module we get a blank module.export that we can POPULATE with whatever we want func variables whatever
 function AlexaSkill(appId) {
     this._appId = appId;
 }
