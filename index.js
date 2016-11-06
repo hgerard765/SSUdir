@@ -1,9 +1,5 @@
 'use strict';
 
-//######## Whenever you first creat a module node.js throws a generic module.exports = {}; in the file  it makes a blank object 
-// so what node.js does is it looks inside the module.exports object and see's whatever is inside of it.  
-
-//common practice to name the variable the same as the module.  
 var AlexaSkill = require('./AlexaSkill'),
     recipes = require('./recipes'),
     http = require('http');
@@ -11,7 +7,7 @@ var AlexaSkill = require('./AlexaSkill'),
 
 var APP_ID = 'amzn1.ask.skill.63621c63-b779-40cf-b258-e73b00fabaa6'; //OPTIONAL: replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
 
-var HowTo = function () {
+var HowTo = function() {
     AlexaSkill.call(this, APP_ID);
 };
 
@@ -19,43 +15,45 @@ var HowTo = function () {
 HowTo.prototype = Object.create(AlexaSkill.prototype);
 HowTo.prototype.constructor = HowTo;
 
-HowTo.prototype.eventHandlers.onLaunch = function (launchRequest, session, response) {
-    var speechText = "Welcome to the Darwin Hall Faculty Directory. You can ask me a question like, what's George Le dean's office phone number? ... Now, what can I help you with.";
+HowTo.prototype.eventHandlers.onLaunch = function(launchRequest, session, response) {
+    var speechText = " Hello Welcome to Sonoma State Directory please give me a teacher to search for.";
     // If the user either does not reply to the welcome message or says something that is not
     // understood, they will be prompted again with this text.
     var repromptText = "For instructions on what you can say, please say help me.";
     response.ask(speechText, repromptText);
 };
+// 
 
 HowTo.prototype.intentHandlers = {
-    "RecipeIntent": function (intent, session, response) {
-        var itemSlot = intent.slots.Bloop,
-            itemName;
-        if (itemSlot && itemSlot.value){
-            itemName = itemSlot.value.toLowerCase();
-        }
-        var cardTitle = "Information for " + itemName,
-          recipe = recipes[itemName],
-            speechOutput,
-            repromptOutput;
-        if (recipe) {
-            speechOutput = {
-                speech: recipe,
-                type: AlexaSkill.speechOutputType.PLAIN_TEXT
-            };
-            response.tellWithCard(speechOutput, cardTitle, recipe);
+    "RecipeIntent": function(intent, session, response) {
+        var itemSlotLname = intent.slots.Lname,
+            Lname,
+            itemSlotFname = intent.slots.Fname,
+            Fname;
+
+        if (itemSlotLname && itemSlotLname.value && itemSlotFname && itemSlotFname.value) {
+            Lname = itemSlotLname.value.toLowerCase();
+            Fname = itemSlotFname.value.toLowerCase();
+        };
+
+
+
+        var options = recipes.optionsBuilder(Fname, Lname);
+
+        if (Fname && Lname) {
+            http.request(options, recipes.callbackBuilder(response, session)).end();
         } else {
             var speech;
-            if (itemName) {
-                speech = "I'm sorry, I currently do not know that answer. What else can I help you with?";
+            if (Fname) {
+                speech = "I'm sorry SSU moonlight does not have a " + Fname + " in it's directory";
             } else {
-                speech = "I'm sorry, I currently do not know that. What else can I help you with?";
+                speech = "What you have said makes no sense to my limited programming please say help or try asking again";
             }
-            speechOutput = {
+            var speechOutput = {
                 speech: speech,
                 type: AlexaSkill.speechOutputType.PLAIN_TEXT
             };
-            repromptOutput = {
+            var repromptOutput = {
                 speech: "Is there anything else I can help you with?",
                 type: AlexaSkill.speechOutputType.PLAIN_TEXT
             };
@@ -63,24 +61,67 @@ HowTo.prototype.intentHandlers = {
         }
     },
 
-    "AMAZON.StopIntent": function (intent, session, response) {
+    "emailIntent": function(intent, session, response) {
+
+        var result = session.attributes[recipes.TEACHER_STUFF_KEY]
+
+        if (result) {
+            var cardTitle = result[0].name + ' email address is ' + result[0].email
+            var emailSpeech = {
+                speech: '<speak>' + result[0].name + '\'s' + ' email address is ' + '<say-as interpret-as="spell-out">' + result[0].email +'</say-as>' + '</speak>',
+                type: AlexaSkill.speechOutputType.SSML
+            }
+            response.ask(emailSpeech, cardTitle, emailSpeech.speech)
+        }
+    },
+
+    "phoneIntent": function(intent, session, response) {
+
+        var result = session.attributes[recipes.TEACHER_STUFF_KEY]
+
+        if (result) {
+            var cardTitle = result[0].name + 'phone number is ' +  result[0].phone 
+            var phoneSpeech = {                                         //search this: ask about \"   and \ "
+                speech: '<speak> '+ result[0].name + '\'s' + ' phone number is ' + '<say-as interpret-as="telephone"> ' + result[0].phone +  ' </say-as></speak>', 
+                type: AlexaSkill.speechOutputType.SSML
+            }
+            response.tellWithCard(phoneSpeech, cardTitle, phoneSpeech.speech)
+        }
+    },
+//      "ssml": "George Ledin Jr phone number is <speak><say-as interpret-as=\"telephone\" +17076642810 </say-as></speak>"
+
+     "officeIntent": function(intent, session, response) {
+
+        var result = session.attributes[recipes.TEACHER_STUFF_KEY]
+
+        if (result) {
+            var cardTitle = result[0].name + 'office is located in building' + result[0].building_name + ' room ' + result[0].office
+            var officeSpeech = {
+                speech:  result[0].name + 'office is located in building ' + result[0].building_name + ' room ' + result[0].office,
+                type: AlexaSkill.speechOutputType.PLAIN_TEXT
+            }
+            response.tellWithCard(officeSpeech, cardTitle, officeSpeech.speech)
+        }
+    },
+
+    "AMAZON.StopIntent": function(intent, session, response) {
         var speechOutput = "Goodbye, and thanks for using the Darwin Hall Directory!";
         response.tell(speechOutput);
     },
-	
-	"AMAZON.PreviousIntent": function (intent, session, response) {
-        var speechOutput = "What can I assist you with?";
-        response.tell(speechOutput);
-	},
 
-    "AMAZON.CancelIntent": function (intent, session, response) {
-        var speechOutput = "Goodbye";
+    "AMAZON.PreviousIntent": function(intent, session, response) {
+        var speechOutput = "What can I assist you with?";
         response.tell(speechOutput);
     },
 
-    "AMAZON.HelpIntent": function (intent, session, response) {
-        var speechText = "You can ask questions like, who is Tia Watts, or, you can say exit... Now, what can I help you with?";
-        var repromptText = "You can ask me things like, what is Glenn Carter's email address, or you can say exit... Now, what can I help you out with?";
+    "AMAZON.CancelIntent": function(intent, session, response) {
+        var speechOutput = "Goodbye";
+        response.tell(speechOutput);
+    },
+//need work here 
+    "AMAZON.HelpIntent": function(intent, session, response) {
+        var speechText = "Give me a teachers name and I will find them for you, after the teacher is found I can give you further information about them.";
+        var repromptText = "You can ask me to find a teacher or you can say go back.";
         var speechOutput = {
             speech: speechText,
             type: AlexaSkill.speechOutputType.PLAIN_TEXT
@@ -90,35 +131,11 @@ HowTo.prototype.intentHandlers = {
             type: AlexaSkill.speechOutputType.PLAIN_TEXT
         };
         response.ask(speechOutput, repromptOutput);
+
     }
 };
 
-exports.handler = function (event, context) {
+exports.handler = function(event, context) {
     var howTo = new HowTo();
     howTo.execute(event, context);
 };
-
-
-
- /*
-
-
-
-callback = function(response) {
-    var str = '';
-    var result = {};
-
-    response.on('data', function (chunk) {
-        str += chunk;
-    });
-
-    response.on('end', function() {
-        result = JSON.parse(str);
-        console.log(result[1].name)
-    });
-}
-
-http.request(options, callback).end();
-
-        */
-
