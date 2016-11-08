@@ -28,7 +28,7 @@ module.exports.callbackBuilder = function(alexa_response, session) {
             var result = JSON.parse(str)
             if (result.length === 0) {
                 var wrongName = {
-                    speech: 'I am sorry SSU Moonlight does not have, ' + resul,
+                    speech: 'I am sorry SSU Moonlight was not able to locate anyone by that name, please try again.',
                     type: AlexaSkill.speechOutputType.PLAIN_TEXT
                 }
                 alexa_response.tellWithCard(wrongName, cardTitle, wrongName.speech);
